@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Project Entropy</string>
+    <string name="accessibility_service_description">Project Entropy 需要无障碍服务权限来执行自动点击操作。此服务仅用于模拟屏幕点击，不会收集或上传任何个人数据。</string>
+
+    <!-- 通用 -->
+    <string name="save">保存</string>
+    <string name="cancel">取消</string>
+    <string name="delete">删除</string>
+    <string name="edit">编辑</string>
+    <string name="confirm">确认</string>
+
+    <!-- 主界面 -->
+    <string name="current_config">当前配置</string>
+    <string name="config_list">配置列表</string>
+    <string name="new_config">新建配置</string>
+    <string name="import_config">导入配置</string>
+    <string name="start_floating_ball">启动悬浮球</string>
+    <string name="stop_floating_ball">停止悬浮球</string>
+
+    <!-- 权限提示 -->
+    <string name="accessibility_not_enabled">无障碍服务未启用</string>
+    <string name="click_to_enable">点击此处前往设置</string>
+    <string name="overlay_not_enabled">悬浮窗权限未授予</string>
+
+    <!-- 配置编辑 -->
+    <string name="config_name">配置名称</string>
+    <string name="center_tap_section">中心激活点击</string>
+    <string name="enable_center_tap">启用中心激活</string>
+    <string name="x_float_range">X轴浮动范围</string>
+    <string name="y_float_range">Y轴浮动范围</string>
+    <string name="reaction_time_section">反应时间</string>
+    <string name="min_reaction_time">最小等待时间</string>
+    <string name="max_reaction_time">最大等待时间</string>
+    <string name="like_area_section">点赞区域</string>
+    <string name="anchor_x_ratio">锚点X位置</string>
+    <string name="anchor_y_ratio">锚点Y位置</string>
+    <string name="jitter_radius">抖动半径</string>
+    <string name="click_rhythm_section">点击节奏</string>
+    <string name="burst_interval">爆发间隔范围</string>
+    <string name="pause_interval">停顿间隔范围</string>
+    <string name="pause_probability">停顿概率</string>
+
+    <!-- 悬浮球 -->
+    <string name="floating_ball_notification_title">Project Entropy 运行中</string>
+    <string name="floating_ball_notification_content">点击悬浮球控制自动点击</string>
+</resources>
