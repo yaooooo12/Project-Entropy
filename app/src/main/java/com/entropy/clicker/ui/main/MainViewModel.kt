@@ -146,11 +146,18 @@ class MainViewModel @Inject constructor(
 
     /**
      * 刷新配置列表（保存后调用）
+     * 同时更新运行中的服务配置，使修改立即生效
      */
     fun refreshConfigs() {
         viewModelScope.launch {
             val current = configRepository.getCurrentConfig()
             _uiState.value = _uiState.value.copy(currentConfig = current)
+
+            // 如果悬浮球正在运行，热更新配置
+            if (current != null && _uiState.value.isFloatingBallRunning) {
+                FloatingBallService.setConfig(current)
+                ClickAccessibilityService.instance?.updateConfig(current)
+            }
         }
     }
 }
