@@ -1,18 +1,25 @@
 package com.entropy.clicker.ui.config
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.GpsFixed
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.entropy.clicker.R
 import com.entropy.clicker.data.model.ClickConfig
+import com.entropy.clicker.data.model.ClickStylePreset
+import com.entropy.clicker.ui.components.ClickStyleSelector
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,8 +40,12 @@ fun ConfigEditScreen(
     onUpdateBurstIntervalMax: (Long) -> Unit,
     onUpdatePauseIntervalMin: (Long) -> Unit,
     onUpdatePauseIntervalMax: (Long) -> Unit,
-    onUpdatePauseProbability: (Float) -> Unit
+    onUpdatePauseProbability: (Float) -> Unit,
+    // UI/UX 2.0 新增
+    onUpdateStylePreset: (ClickStylePreset) -> Unit = {},
+    onOpenScopeSetup: () -> Unit = {}
 ) {
+    var showAdvancedParams by remember { mutableStateOf(false) }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -71,6 +82,46 @@ fun ConfigEditScreen(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
+
+            // ===== UI/UX 2.0: 瞄准镜设置 =====
+            SectionCard(title = "目标区域") {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = if (config.positionSetByScope) "已通过瞄准镜设置" else "手动设置",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            text = "位置: ${(config.likeAnchorXRatio * 100).toInt()}%, ${(config.likeAnchorYRatio * 100).toInt()}%",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    FilledTonalButton(onClick = onOpenScopeSetup) {
+                        Icon(Icons.Default.GpsFixed, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("选取位置")
+                    }
+                }
+            }
+
+            // ===== UI/UX 2.0: 风格选择器 =====
+            Card {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    ClickStyleSelector(
+                        selected = config.stylePreset,
+                        onSelect = onUpdateStylePreset
+                    )
+                }
+            }
 
             // 中心激活点击部分
             SectionCard(title = stringResource(R.string.center_tap_section)) {
@@ -147,8 +198,35 @@ fun ConfigEditScreen(
                 )
             }
 
-            // 点击节奏部分
-            SectionCard(title = stringResource(R.string.click_rhythm_section)) {
+            // ===== 高级参数折叠区 =====
+            Card(
+                onClick = { showAdvancedParams = !showAdvancedParams }
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "高级参数",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Icon(
+                        imageVector = if (showAdvancedParams) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                        contentDescription = if (showAdvancedParams) "收起" else "展开"
+                    )
+                }
+            }
+
+            AnimatedVisibility(visible = showAdvancedParams) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // 点击节奏部分
+                    SectionCard(title = stringResource(R.string.click_rhythm_section)) {
                 Text(
                     text = "爆发间隔",
                     style = MaterialTheme.typography.bodyMedium
@@ -197,6 +275,8 @@ fun ConfigEditScreen(
                     unit = "%",
                     displayMultiplier = 100f
                 )
+            }
+                }
             }
         }
     }

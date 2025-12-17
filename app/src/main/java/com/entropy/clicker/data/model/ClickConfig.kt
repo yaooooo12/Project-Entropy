@@ -50,8 +50,32 @@ data class ClickConfig(
 
     // ========== 微滑动 ==========
     val microSlideMin: Int = 2,                    // 微滑动最小距离 (基准像素，自动缩放)
-    val microSlideMax: Int = 5                     // 微滑动最大距离 (基准像素，自动缩放)
+    val microSlideMax: Int = 5,                    // 微滑动最大距离 (基准像素，自动缩放)
+
+    // ========== UI/UX 2.0 新增字段 ==========
+    val stylePreset: ClickStylePreset = ClickStylePreset.NATURAL,  // 风格预设
+    val useCustomTiming: Boolean = false,          // 是否使用自定义节奏参数（true时忽略stylePreset）
+    val positionSetByScope: Boolean = false        // 是否通过瞄准镜设置了位置
 ) {
+    /**
+     * 获取实际使用的爆发间隔最小值
+     * 如果使用自定义参数则返回配置值，否则返回预设值
+     */
+    val effectiveBurstIntervalMin: Long
+        get() = if (useCustomTiming) burstIntervalMin else stylePreset.burstIntervalMin
+
+    val effectiveBurstIntervalMax: Long
+        get() = if (useCustomTiming) burstIntervalMax else stylePreset.burstIntervalMax
+
+    val effectivePauseIntervalMin: Long
+        get() = if (useCustomTiming) pauseIntervalMin else stylePreset.pauseIntervalMin
+
+    val effectivePauseIntervalMax: Long
+        get() = if (useCustomTiming) pauseIntervalMax else stylePreset.pauseIntervalMax
+
+    val effectivePauseProbability: Float
+        get() = if (useCustomTiming) pauseProbability else stylePreset.pauseProbability
+
     companion object {
         val DEFAULT = ClickConfig()
     }

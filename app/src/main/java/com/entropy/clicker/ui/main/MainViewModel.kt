@@ -138,4 +138,14 @@ class MainViewModel @Inject constructor(
         }
         return newConfig
     }
+
+    /**
+     * 刷新配置列表（保存后调用）
+     */
+    fun refreshConfigs() {
+        viewModelScope.launch {
+            val current = configRepository.getCurrentConfig()
+            _uiState.value = _uiState.value.copy(currentConfig = current)
+        }
+    }
 }

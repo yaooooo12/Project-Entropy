@@ -1,17 +1,95 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="56dp"
-    android:layout_height="56dp"
-    android:background="@drawable/ball_idle">
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/ball_container"
+    android:layout_width="wrap_content"
+    android:layout_height="48dp"
+    android:minWidth="48dp"
+    android:background="@drawable/ball_idle"
+    android:gravity="center"
+    android:orientation="horizontal"
+    android:paddingHorizontal="12dp">
 
+    <!-- 主图标/文字 -->
     <TextView
         android:id="@+id/ball_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
         android:text="E"
         android:textColor="@android:color/white"
         android:textSize="16sp"
         android:textStyle="bold" />
 
-</FrameLayout>
+    <!-- 工作状态：CPS 显示 -->
+    <LinearLayout
+        android:id="@+id/cps_container"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        android:layout_marginStart="8dp">
+
+        <!-- 波形指示器 -->
+        <TextView
+            android:id="@+id/wave_indicator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="|||"
+            android:textColor="@android:color/white"
+            android:textSize="12sp"
+            android:alpha="0.7" />
+
+        <!-- CPS 数值 -->
+        <TextView
+            android:id="@+id/cps_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:text="0.0"
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- 展开状态：控制按钮 -->
+    <LinearLayout
+        android:id="@+id/controls_container"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        android:layout_marginStart="12dp">
+
+        <!-- 暂停/继续按钮 -->
+        <ImageButton
+            android:id="@+id/btn_pause"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="暂停"
+            android:src="@android:drawable/ic_media_pause"
+            android:tint="@android:color/white" />
+
+        <!-- 设置按钮 -->
+        <ImageButton
+            android:id="@+id/btn_settings"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="8dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="设置"
+            android:src="@android:drawable/ic_menu_preferences"
+            android:tint="@android:color/white" />
+
+        <!-- 关闭按钮 -->
+        <ImageButton
+            android:id="@+id/btn_close"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="8dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="关闭"
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            android:tint="@android:color/white" />
+    </LinearLayout>
+
+</LinearLayout>

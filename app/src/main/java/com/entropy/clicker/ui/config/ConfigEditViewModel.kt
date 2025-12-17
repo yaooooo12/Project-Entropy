@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.entropy.clicker.data.model.ClickConfig
+import com.entropy.clicker.data.model.ClickStylePreset
 import com.entropy.clicker.data.repository.ConfigRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,6 +37,17 @@ class ConfigEditViewModel @Inject constructor(
                 configRepository.getConfig(configId)?.let {
                     _config.value = it
                 }
+            }
+        }
+    }
+
+    /**
+     * 通过ID加载配置（用于BottomSheet模式）
+     */
+    fun loadConfigById(id: String) {
+        viewModelScope.launch {
+            configRepository.getConfig(id)?.let {
+                _config.value = it
             }
         }
     }
@@ -79,4 +91,23 @@ class ConfigEditViewModel @Inject constructor(
 
     fun updateMaxClickCount(value: Int) = updateConfig { it.copy(maxClickCount = value) }
     fun updateMaxRunDuration(value: Long) = updateConfig { it.copy(maxRunDuration = value) }
+
+    // UI/UX 2.0 新增方法
+    fun updateStylePreset(preset: ClickStylePreset) = updateConfig {
+        it.copy(stylePreset = preset, useCustomTiming = false)
+    }
+
+    fun enableCustomTiming() = updateConfig { it.copy(useCustomTiming = true) }
+
+    /**
+     * 处理瞄准镜设置结果
+     */
+    fun updateFromScopeResult(xRatio: Float, yRatio: Float, jitterRadius: Int) = updateConfig {
+        it.copy(
+            likeAnchorXRatio = xRatio,
+            likeAnchorYRatio = yRatio,
+            likeJitterRadius = jitterRadius,
+            positionSetByScope = true
+        )
+    }
 }

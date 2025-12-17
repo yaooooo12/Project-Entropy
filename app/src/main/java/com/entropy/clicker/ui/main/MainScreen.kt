@@ -1,24 +1,28 @@
 package com.entropy.clicker.ui.main
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.entropy.clicker.R
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.entropy.clicker.data.model.ClickConfig
-import java.text.SimpleDateFormat
-import java.util.*
+import com.entropy.clicker.ui.components.ConfigCoverCard
+import com.entropy.clicker.ui.components.EmptyConfigCard
+import com.entropy.clicker.ui.components.PulsingButton
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun MainScreen(
     uiState: MainUiState,
@@ -32,319 +36,316 @@ fun MainScreen(
     onStartFloatingBall: () -> Unit,
     onStopFloatingBall: () -> Unit
 ) {
-    // 检查权限
-    LaunchedEffect(Unit) {
-        onCheckPermissions()
+    // 监听生命周期，每次 onResume 时检查权限
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                onCheckPermissions()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
     }
+
+    val permissionsReady = uiState.isAccessibilityEnabled && uiState.isOverlayEnabled
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Project Entropy") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        text = "ENTROPY",
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 4.sp
+                    )
+                },
+                actions = {
+                    IconButton(onClick = onCreateConfig) {
+                        Icon(Icons.Default.Add, contentDescription = "新建配置")
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
                 )
             )
-        },
-        floatingActionButton = {
-            if (uiState.isAccessibilityEnabled && uiState.isOverlayEnabled) {
-                FloatingActionButton(
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // 权限提示区域
+            if (!permissionsReady) {
+                PermissionTaskCard(
+                    isAccessibilityEnabled = uiState.isAccessibilityEnabled,
+                    isOverlayEnabled = uiState.isOverlayEnabled,
+                    onOpenAccessibilitySettings = onOpenAccessibilitySettings,
+                    onOpenOverlaySettings = onOpenOverlaySettings,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+                Spacer(Modifier.height(16.dp))
+            }
+
+            // 配置卡片区域
+            if (uiState.configs.isEmpty()) {
+                // 空状态
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    EmptyConfigCard(onCreate = onCreateConfig)
+                }
+            } else {
+                // HorizontalPager 配置卡片
+                val pagerState = rememberPagerState(
+                    initialPage = uiState.configs.indexOfFirst { it.id == uiState.currentConfig?.id }
+                        .coerceAtLeast(0),
+                    pageCount = { uiState.configs.size }
+                )
+
+                // 监听页面变化，更新当前选中配置
+                LaunchedEffect(pagerState.currentPage) {
+                    if (uiState.configs.isNotEmpty() && pagerState.currentPage < uiState.configs.size) {
+                        val selectedConfig = uiState.configs[pagerState.currentPage]
+                        if (selectedConfig.id != uiState.currentConfig?.id) {
+                            onSelectConfig(selectedConfig)
+                        }
+                    }
+                }
+
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                    contentPadding = PaddingValues(horizontal = 48.dp),
+                    pageSpacing = 16.dp
+                ) { page ->
+                    val config = uiState.configs[page]
+                    ConfigCoverCard(
+                        config = config,
+                        onEdit = { onEditConfig(config) }
+                    )
+                }
+
+                // 页面指示器
+                Row(
+                    modifier = Modifier.padding(vertical = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    repeat(uiState.configs.size) { index ->
+                        val isSelected = pagerState.currentPage == index
+                        Surface(
+                            modifier = Modifier.size(if (isSelected) 10.dp else 8.dp),
+                            shape = MaterialTheme.shapes.small,
+                            color = if (isSelected) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                            }
+                        ) {}
+                    }
+                }
+            }
+
+            // 启动按钮区域
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 32.dp)
+            ) {
+                PulsingButton(
+                    text = if (uiState.isFloatingBallRunning) "停止" else "启动",
+                    icon = if (uiState.isFloatingBallRunning) Icons.Default.Stop else Icons.Default.PlayArrow,
                     onClick = {
                         if (uiState.isFloatingBallRunning) {
                             onStopFloatingBall()
                         } else {
                             onStartFloatingBall()
                         }
-                    }
-                ) {
-                    Icon(
-                        imageVector = if (uiState.isFloatingBallRunning) Icons.Default.Stop else Icons.Default.PlayArrow,
-                        contentDescription = if (uiState.isFloatingBallRunning) "停止" else "启动"
-                    )
-                }
-            }
-        }
-    ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // 权限提示卡片
-            if (!uiState.isAccessibilityEnabled || !uiState.isOverlayEnabled) {
-                item {
-                    PermissionCard(
-                        isAccessibilityEnabled = uiState.isAccessibilityEnabled,
-                        isOverlayEnabled = uiState.isOverlayEnabled,
-                        onOpenAccessibilitySettings = onOpenAccessibilitySettings,
-                        onOpenOverlaySettings = onOpenOverlaySettings
-                    )
-                }
-            }
-
-            // 当前配置
-            item {
-                CurrentConfigCard(
-                    config = uiState.currentConfig,
-                    onEdit = { uiState.currentConfig?.let { onEditConfig(it) } }
-                )
-            }
-
-            // 操作按钮
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = onCreateConfig,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = null)
-                        Spacer(Modifier.width(4.dp))
-                        Text("新建配置")
-                    }
-                }
-            }
-
-            // 配置列表标题
-            item {
-                Text(
-                    text = "配置列表",
-                    style = MaterialTheme.typography.titleMedium
-                )
-            }
-
-            // 配置列表
-            items(uiState.configs) { config ->
-                ConfigListItem(
-                    config = config,
-                    isSelected = config.id == uiState.currentConfig?.id,
-                    onSelect = { onSelectConfig(config) },
-                    onEdit = { onEditConfig(config) },
-                    onDelete = { onDeleteConfig(config) }
+                    },
+                    enabled = permissionsReady && uiState.currentConfig != null,
+                    isActive = uiState.isFloatingBallRunning
                 )
             }
         }
     }
 }
 
+/**
+ * 权限任务卡片 - 游戏化引导风格
+ */
 @Composable
-fun PermissionCard(
+fun PermissionTaskCard(
     isAccessibilityEnabled: Boolean,
     isOverlayEnabled: Boolean,
     onOpenAccessibilitySettings: () -> Unit,
-    onOpenOverlaySettings: () -> Unit
+    onOpenOverlaySettings: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
+    val completedCount = listOf(isAccessibilityEnabled, isOverlayEnabled).count { it }
+    val totalCount = 2
+    val progress = completedCount.toFloat() / totalCount
+
     Card(
+        modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
         )
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            if (!isAccessibilityEnabled) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onOpenAccessibilitySettings() },
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        Icons.Default.Warning,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = stringResource(R.string.accessibility_not_enabled),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Text(
-                            text = stringResource(R.string.click_to_enable),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.7f)
-                        )
-                    }
-                    Icon(Icons.Default.ChevronRight, contentDescription = null)
-                }
-            }
-
-            if (!isOverlayEnabled) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onOpenOverlaySettings() },
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        Icons.Default.Warning,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = stringResource(R.string.overlay_not_enabled),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Text(
-                            text = stringResource(R.string.click_to_enable),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.7f)
-                        )
-                    }
-                    Icon(Icons.Default.ChevronRight, contentDescription = null)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun CurrentConfigCard(
-    config: ClickConfig?,
-    onEdit: () -> Unit
-) {
-    Card {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
+            // 标题栏
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = stringResource(R.string.current_config),
-                    style = MaterialTheme.typography.titleMedium
-                )
-                if (config != null) {
-                    IconButton(onClick = onEdit) {
-                        Icon(Icons.Default.Edit, contentDescription = "编辑")
-                    }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.Lock,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "解锁任务",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                }
+                // 进度指示
+                Surface(
+                    shape = MaterialTheme.shapes.small,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                ) {
+                    Text(
+                        text = "$completedCount / $totalCount",
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
 
-            Spacer(Modifier.height(8.dp))
+            // 进度条
+            LinearProgressIndicator(
+                progress = progress,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(6.dp),
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.2f)
+            )
 
-            if (config != null) {
-                Text(
-                    text = config.name,
-                    style = MaterialTheme.typography.titleLarge
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = "点赞区域: (${(config.likeAnchorXRatio * 100).toInt()}%, ${(config.likeAnchorYRatio * 100).toInt()}%)",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = "点击节奏: ${config.burstIntervalMin}-${config.burstIntervalMax}ms",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = "最后修改: ${formatTime(config.updatedAt)}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                )
-            } else {
-                Text(
-                    text = "暂无配置",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+            // 无障碍权限
+            PermissionTaskItem(
+                title = "无障碍服务",
+                description = "允许自动点击操作",
+                isCompleted = isAccessibilityEnabled,
+                onClick = onOpenAccessibilitySettings
+            )
+
+            // 悬浮窗权限
+            PermissionTaskItem(
+                title = "悬浮窗权限",
+                description = "显示悬浮控制球",
+                isCompleted = isOverlayEnabled,
+                onClick = onOpenOverlaySettings
+            )
         }
     }
 }
 
 @Composable
-fun ConfigListItem(
-    config: ClickConfig,
-    isSelected: Boolean,
-    onSelect: () -> Unit,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit
+private fun PermissionTaskItem(
+    title: String,
+    description: String,
+    isCompleted: Boolean,
+    onClick: () -> Unit
 ) {
-    var showDeleteDialog by remember { mutableStateOf(false) }
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onSelect() },
-        colors = if (isSelected) {
-            CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer
-            )
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = { if (!isCompleted) onClick() },
+        enabled = !isCompleted,
+        shape = MaterialTheme.shapes.medium,
+        color = if (isCompleted) {
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
         } else {
-            CardDefaults.cardColors()
+            MaterialTheme.colorScheme.surface
         }
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            RadioButton(
-                selected = isSelected,
-                onClick = onSelect
-            )
-            Spacer(Modifier.width(8.dp))
+            // 状态图标
+            Surface(
+                shape = MaterialTheme.shapes.small,
+                color = if (isCompleted) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
+                },
+                modifier = Modifier.size(40.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                    Icon(
+                        imageVector = if (isCompleted) Icons.Default.Check else Icons.Default.Lock,
+                        contentDescription = null,
+                        tint = if (isCompleted) {
+                            MaterialTheme.colorScheme.onPrimary
+                        } else {
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                        },
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+
+            Spacer(Modifier.width(12.dp))
+
+            // 文字内容
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = config.name,
+                    text = title,
                     style = MaterialTheme.typography.bodyLarge,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    fontWeight = FontWeight.Medium,
+                    color = if (isCompleted) {
+                        MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    }
                 )
                 Text(
-                    text = formatTime(config.updatedAt),
+                    text = if (isCompleted) "已完成" else description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = if (isCompleted) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    }
                 )
             }
-            IconButton(onClick = onEdit) {
-                Icon(Icons.Default.Edit, contentDescription = "编辑")
-            }
-            IconButton(onClick = { showDeleteDialog = true }) {
-                Icon(Icons.Default.Delete, contentDescription = "删除")
+
+            // 右侧箭头或勾选
+            if (!isCompleted) {
+                Icon(
+                    Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                )
             }
         }
     }
-
-    if (showDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            title = { Text("删除配置") },
-            text = { Text("确定要删除配置 \"${config.name}\" 吗？") },
-            confirmButton = {
-                TextButton(onClick = {
-                    onDelete()
-                    showDeleteDialog = false
-                }) {
-                    Text("删除")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("取消")
-                }
-            }
-        )
-    }
-}
-
-private fun formatTime(timestamp: Long): String {
-    val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
-    return sdf.format(Date(timestamp))
 }
