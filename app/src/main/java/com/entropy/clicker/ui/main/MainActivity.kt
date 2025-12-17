@@ -9,8 +9,11 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -67,6 +70,31 @@ class MainActivity : ComponentActivity() {
 
                     // 编辑状态管理
                     var editingConfigId by remember { mutableStateOf<String?>(null) }
+                    var showStopFirstDialog by remember { mutableStateOf(false) }
+
+                    // 停止后再编辑提醒对话框
+                    if (showStopFirstDialog) {
+                        AlertDialog(
+                            onDismissRequest = { showStopFirstDialog = false },
+                            title = { Text("无法编辑") },
+                            text = { Text("请先停止运行后再编辑配置") },
+                            confirmButton = {
+                                TextButton(
+                                    onClick = {
+                                        showStopFirstDialog = false
+                                        mainViewModel.stopFloatingBall()
+                                    }
+                                ) {
+                                    Text("停止并编辑")
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { showStopFirstDialog = false }) {
+                                    Text("取消")
+                                }
+                            }
+                        )
+                    }
 
                     // 主界面
                     MainScreen(
@@ -76,12 +104,20 @@ class MainActivity : ComponentActivity() {
                         onOpenOverlaySettings = { mainViewModel.openOverlaySettings() },
                         onSelectConfig = { mainViewModel.selectConfig(it) },
                         onEditConfig = { config ->
-                            editingConfigId = config.id
+                            if (uiState.isFloatingBallRunning) {
+                                showStopFirstDialog = true
+                            } else {
+                                editingConfigId = config.id
+                            }
                         },
                         onDeleteConfig = { mainViewModel.deleteConfig(it) },
                         onCreateConfig = {
-                            val newConfig = mainViewModel.createNewConfig()
-                            editingConfigId = newConfig.id
+                            if (uiState.isFloatingBallRunning) {
+                                showStopFirstDialog = true
+                            } else {
+                                val newConfig = mainViewModel.createNewConfig()
+                                editingConfigId = newConfig.id
+                            }
                         },
                         onStartFloatingBall = { mainViewModel.startFloatingBall() },
                         onStopFloatingBall = { mainViewModel.stopFloatingBall() }
