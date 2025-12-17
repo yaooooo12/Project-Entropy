@@ -45,6 +45,8 @@ class ConfigEditViewModel @Inject constructor(
      * 通过ID加载配置（用于BottomSheet模式）
      */
     fun loadConfigById(id: String) {
+        // 重置保存状态，防止缓存的 ViewModel 导致弹窗立即关闭
+        _isSaved.value = false
         viewModelScope.launch {
             configRepository.getConfig(id)?.let {
                 _config.value = it
