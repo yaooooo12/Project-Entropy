@@ -115,6 +115,10 @@ class MainActivity : ComponentActivity() {
                             config = config,
                             onDismiss = { editingConfigId = null },
                             onSave = { editViewModel.saveConfig() },
+                            onDelete = {
+                                mainViewModel.deleteConfig(config)
+                                editingConfigId = null
+                            },
                             onUpdateName = { editViewModel.updateName(it) },
                             onUpdateStylePreset = { editViewModel.updateStylePreset(it) },
                             onOpenScopeSetup = {

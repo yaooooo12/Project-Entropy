@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.GpsFixed
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -30,6 +31,7 @@ fun ConfigEditBottomSheet(
     config: ClickConfig,
     onDismiss: () -> Unit,
     onSave: () -> Unit,
+    onDelete: () -> Unit,
     onUpdateName: (String) -> Unit,
     onUpdateStylePreset: (ClickStylePreset) -> Unit,
     onOpenScopeSetup: () -> Unit,
@@ -289,6 +291,49 @@ fun ConfigEditBottomSheet(
                         )
                     }
                 }
+            }
+
+            // 删除按钮
+            var showDeleteConfirm by remember { mutableStateOf(false) }
+
+            if (showDeleteConfirm) {
+                AlertDialog(
+                    onDismissRequest = { showDeleteConfirm = false },
+                    title = { Text("删除配置") },
+                    text = { Text("确定要删除「${config.name}」吗？此操作无法撤销。") },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                showDeleteConfirm = false
+                                onDelete()
+                            },
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
+                            )
+                        ) {
+                            Text("删除")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showDeleteConfirm = false }) {
+                            Text("取消")
+                        }
+                    }
+                )
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            OutlinedButton(
+                onClick = { showDeleteConfirm = true },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Icon(Icons.Default.Delete, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("删除配置")
             }
         }
     }
