@@ -88,16 +88,16 @@ class MainActivity : ComponentActivity() {
                     )
 
                     // 底部弹窗编辑
-                    if (editingConfigId != null) {
+                    editingConfigId?.let { currentConfigId ->
                         val editViewModel: ConfigEditViewModel = hiltViewModel(
-                            key = editingConfigId
+                            key = currentConfigId
                         )
                         val config by editViewModel.config.collectAsState()
                         val isSaved by editViewModel.isSaved.collectAsState()
 
                         // 初始化时加载配置
-                        androidx.compose.runtime.LaunchedEffect(editingConfigId) {
-                            editViewModel.loadConfigById(editingConfigId!!)
+                        androidx.compose.runtime.LaunchedEffect(currentConfigId) {
+                            editViewModel.loadConfigById(currentConfigId)
                         }
 
                         // 保存成功后关闭

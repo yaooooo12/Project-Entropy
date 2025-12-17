@@ -30,6 +30,9 @@ class OverlaySetupService : Service() {
         private const val MIN_JITTER_RADIUS = 30
         private const val MAX_JITTER_RADIUS = 200
         private const val DEFAULT_JITTER_RADIUS = 50
+        // 基准屏幕尺寸 (与 HumanClicker 一致)
+        private const val BASE_WIDTH = 1080f
+        private const val BASE_HEIGHT = 1920f
 
         fun start(context: Context) {
             context.startService(Intent(context, OverlaySetupService::class.java))
@@ -49,6 +52,9 @@ class OverlaySetupService : Service() {
     private var scopeCenterX = 0f
     private var scopeCenterY = 0f
     private var currentJitterRadius = DEFAULT_JITTER_RADIUS
+
+    // 缩放因子 (与 HumanClicker 保持一致)
+    private var scaleAvg = 1f
     private var initialTouchX = 0f
     private var initialTouchY = 0f
     private var initialScopeX = 0f
@@ -61,6 +67,10 @@ class OverlaySetupService : Service() {
         val metrics = resources.displayMetrics
         screenWidth = metrics.widthPixels
         screenHeight = metrics.heightPixels
+        // 计算缩放因子 (与 HumanClicker 一致)
+        val scaleX = screenWidth / BASE_WIDTH
+        val scaleY = screenHeight / BASE_HEIGHT
+        scaleAvg = (scaleX + scaleY) / 2f
         vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val vm = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
             vm.defaultVibrator
@@ -144,11 +154,14 @@ class OverlaySetupService : Service() {
         scopeRing.y = scopeCenterY - scopeRing.height / 2
         val xRatio = (scopeCenterX / screenWidth * 100).toInt()
         val yRatio = (scopeCenterY / screenHeight * 100).toInt()
-        hintText.text = "位置: ${xRatio}%, ${yRatio}% | 范围: ${currentJitterRadius}px"
+        val scaledRadius = (currentJitterRadius * scaleAvg).toInt()
+        hintText.text = "位置: ${xRatio}%, ${yRatio}% | 半径: ${scaledRadius}px"
     }
 
     private fun updateScopeSize() {
-        val ringSize = currentJitterRadius * 2 + dp(40)
+        // 使用与 HumanClicker 相同的缩放计算实际显示大小
+        val scaledRadius = (currentJitterRadius * scaleAvg).toInt()
+        val ringSize = scaledRadius * 2 + dp(40)
         scopeRing.layoutParams = scopeRing.layoutParams.apply { width = ringSize; height = ringSize }
         scopeRing.requestLayout()
         updateScopePosition()
