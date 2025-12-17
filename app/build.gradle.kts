@@ -23,6 +23,15 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("../entropy-release.jks")
+            storePassword = "entropy123"
+            keyAlias = "entropy"
+            keyPassword = "entropy123"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -30,6 +39,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
