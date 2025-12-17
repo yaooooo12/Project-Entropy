@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- 外圈 -->
+    <!-- 发光外圈 -->
     <item>
         <shape android:shape="oval">
-            <solid android:color="#FF4CAF50" />
+            <solid android:color="#80FFD700" />
         </shape>
     </item>
-    <!-- 内圈 -->
+    <!-- 核心内圈 -->
     <item
-        android:left="6dp"
-        android:top="6dp"
-        android:right="6dp"
-        android:bottom="6dp">
+        android:left="4dp"
+        android:top="4dp"
+        android:right="4dp"
+        android:bottom="4dp">
         <shape android:shape="oval">
-            <solid android:color="#FFFFFFFF" />
+            <solid android:color="#FFFFD700" />
         </shape>
     </item>
 </layer-list>

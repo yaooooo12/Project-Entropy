@@ -1,8 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="oval">
-    <stroke
-        android:width="3dp"
-        android:color="#80FFFFFF" />
-    <solid android:color="#00000000" />
-</shape>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 外层发光 (模糊效果) -->
+    <item>
+        <shape android:shape="oval">
+            <stroke
+                android:width="8dp"
+                android:color="#40FFD700" />
+            <solid android:color="#00000000" />
+        </shape>
+    </item>
+    <!-- 中层发光 -->
+    <item>
+        <shape android:shape="oval">
+            <stroke
+                android:width="5dp"
+                android:color="#80FFD700" />
+            <solid android:color="#00000000" />
+        </shape>
+    </item>
+    <!-- 内层核心 (亮黄色) -->
+    <item>
+        <shape android:shape="oval">
+            <stroke
+                android:width="3dp"
+                android:color="#FFFFD700" />
+            <solid android:color="#00000000" />
+        </shape>
+    </item>
+</layer-list>
