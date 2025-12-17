@@ -1,11 +1,9 @@
 package com.entropy.clicker.ui.main
 
-import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
-import android.view.accessibility.AccessibilityManager
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.entropy.clicker.data.model.ClickConfig
@@ -65,12 +63,19 @@ class MainViewModel @Inject constructor(
     }
 
     private fun isAccessibilityServiceEnabled(): Boolean {
-        val am = context.getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager
-        val enabledServices = am.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK)
-        return enabledServices.any {
-            it.resolveInfo.serviceInfo.packageName == context.packageName &&
-                    it.resolveInfo.serviceInfo.name == ClickAccessibilityService::class.java.name
+        // 方法1: 检查服务实例是否存在
+        if (ClickAccessibilityService.instance != null) {
+            return true
         }
+
+        // 方法2: 通过 Settings.Secure 检查
+        val serviceId = "${context.packageName}/${ClickAccessibilityService::class.java.canonicalName}"
+        val enabledServices = Settings.Secure.getString(
+            context.contentResolver,
+            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+        ) ?: ""
+
+        return enabledServices.contains(serviceId) || enabledServices.contains(context.packageName)
     }
 
     fun openAccessibilitySettings() {
